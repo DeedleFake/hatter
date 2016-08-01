@@ -1,9 +1,12 @@
 package main
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/naoina/toml"
 )
 
 var ServiceBase = filepath.Join(Base, "services")
@@ -14,15 +17,14 @@ type Service struct {
 
 	cmd *exec.Cmd
 
-	start func() error
-	stop  func() error
+	stop func() error
 }
 
 func LoadService(name string) (*Service, error) {
 	path := filepath.Join(ServiceBase, name)
 	startPath := filepath.Join(path, "start")
 	stopPath := filepath.Join(path, "stop")
-	//configPath := filepath.Join(path, "config")
+	configPath := filepath.Join(path, "config")
 
 	svc := &Service{
 		Name: name,
@@ -39,6 +41,15 @@ func LoadService(name string) (*Service, error) {
 		}
 	}
 
+	if config, err := os.Open(configPath); err == nil {
+		defer config.Close()
+
+		svc.Config, err = LoadServiceConfig(config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return svc, nil
 }
 
@@ -52,4 +63,12 @@ func (svc *Service) customStop() error {
 
 type ServiceConfig struct {
 	Deps []string
+}
+
+func LoadServiceConfig(r io.Reader) (*ServiceConfig, error) {
+	d := toml.NewDecoder(r)
+
+	var config ServiceConfig
+	err := d.Decode(&config)
+	return &config, err
 }
