@@ -61,6 +61,14 @@ func (svc *Service) customStop() error {
 	panic("Not implemented.")
 }
 
+func (svc *Service) Start() error {
+	panic("Not implemented.")
+}
+
+func (svc *Service) Stop() error {
+	return svc.stop()
+}
+
 type ServiceConfig struct {
 	Deps []string
 }
